@@ -3,10 +3,12 @@ from __future__ import print_function
 import argparse
 import os
 import pandas as pd
-
-from sklearn.externals import joblib
+# from sklearn.externals import joblib
+import joblib
 
 ## TODO: Import any additional libraries you need to define a model
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import precision_score, recall_score, accuracy_score
 
 
 # Provided model load function
@@ -36,32 +38,48 @@ if __name__ == '__main__':
     # Do not need to change
     parser.add_argument('--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
     parser.add_argument('--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
-    parser.add_argument('--data-dir', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
+    parser.add_argument('--data-dir', type=str, default=os.environ['SM_CHANNEL_DATA'])
     
     ## TODO: Add any additional arguments that you will need to pass into your model
-    
+    parser.add_argument('--n_neighbors', type=int, default=5)
+    parser.add_argument('--weights', type=str, default='distance')
+    parser.add_argument('--algorithm', type=str, default='auto')
     # args holds all passed-in arguments
     args = parser.parse_args()
 
     # Read in csv training file
-    training_dir = args.data_dir
-    train_data = pd.read_csv(os.path.join(training_dir, "train.csv"), header=None, names=None)
+    train_data = pd.read_csv(os.path.join(args.data_dir, "train.csv"), header=None, names=None)
+    test_data = pd.read_csv(os.path.join(args.data_dir, "test.csv"), header=None, names=None)
 
     # Labels are in the first column
     train_y = train_data.iloc[:,0]
     train_x = train_data.iloc[:,1:]
     
+    test_y = test_data.iloc[:,0]
+    test_x = test_data.iloc[:,1:]
+    
     
     ## --- Your code here --- ##
     
+    
 
     ## TODO: Define a model 
-    model = None
+    model = KNeighborsClassifier(
+        n_neighbors=args.n_neighbors, 
+        weights=args.weights, 
+        algorithm=args.algorithm)
     
     
     ## TODO: Train the model
     
+    model.fit(train_x,train_y)
+    pred_y = model.predict(test_x)
     
+    accuracy = accuracy_score(test_y, pred_y)
+    recall = recall_score(test_y, pred_y, average='binary')
+    precision = precision_score(test_y, pred_y, average='binary')
+    
+    print("Accuracy : {}; Recall : {}; Precision : {};".format(accuracy,recall,precision))
     
     ## --- End of your code  --- ##
     
